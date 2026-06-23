@@ -2,7 +2,9 @@
 
 ## Overview
 
-This Node.js command-line application reads a utility bill text file and extracts the following information:
+This project is a Node.js command-line program that reads a water utility bill from a text file and extracts important billing information using regular expressions.
+
+The program extracts:
 
 - Customer Number
 - Account Number
@@ -11,9 +13,7 @@ This Node.js command-line application reads a utility bill text file and extract
 - Bill Date
 - Total New Charges
 
----
-
-## Project Structure
+## Files
 
 ```text
 project-folder/
@@ -23,29 +23,33 @@ project-folder/
 └── README.md
 ```
 
----
-
 ## Requirements
 
-- Node.js
+This project requires Node.js.
 
-Verify installation:
+To check if Node.js is installed, run:
 
 ```bash
 node -v
 ```
 
----
+If a version number appears, Node.js is installed correctly.
 
-## Running the Program
+## How to Run
 
-Run the parser with:
+Open the project folder in VS Code.
+
+Then open the terminal:
+
+```text
+Terminal → New Terminal
+```
+
+Run the program using:
 
 ```bash
 node parser.js test-q1.txt
 ```
-
----
 
 ## Expected Output
 
@@ -58,65 +62,114 @@ Bill Date: Aug 11, 2020
 Total New Charges: $2,760.84
 ```
 
----
+# How the Program Works
 
-# Implementation
-
-## Step 1: Read the Input File
+## 1. Import the File System Module
 
 ```js
 const fs = require("fs");
-
-const filePath = process.argv[2];
-
-const text = fs.readFileSync(filePath, "utf8");
 ```
 
-The program accepts the file path through the command line and reads the contents of the bill into a string.
+The `fs` module is a built-in Node.js module used to work with files.
+
+In this project, it is used to read the bill text file.
 
 ---
 
-## Step 2: Extract Customer and Account Number
+## 2. Get the File Path from the Command Line
+
+```js
+const filePath = process.argv[2];
+```
+
+When the program is run like this:
+
+```bash
+node parser.js test-q1.txt
+```
+
+`process.argv[2]` stores the value:
+
+```text
+test-q1.txt
+```
+
+This allows the program to work with any input file path provided by the user.
+
+---
+
+## 3. Validate the File Argument
+
+```js
+if (!filePath) {
+  console.error("Usage: node parser.js <input-file>");
+  process.exit(1);
+}
+```
+
+This checks whether the user provided a file name.
+
+If no file is provided, the program prints a helpful usage message and exits with an error code.
+
+---
+
+## 4. Read the Text File
+
+```js
+const text = fs.readFileSync(filePath, "utf8");
+```
+
+This reads the full content of the input file and stores it as a string in the variable `text`.
+
+The `"utf8"` option ensures the file is read as readable text.
+
+---
+
+## 5. Extract Customer and Account Number
 
 ```js
 const accountMatch = text.match(
-    /Customer no\. - Account no\.[\s\S]*?(\d+)\s*-\s*(\d+)/i
+  /Customer no\. - Account no\.[\s\S]*?(\d+)\s*-\s*(\d+)/i
 );
 
 const customerNum = accountMatch[1];
 const accountNum = accountMatch[2];
 ```
 
-This regular expression finds the customer number and account number following the label:
+This regex looks for the label:
 
 ```text
 Customer no. - Account no.
 ```
 
-Example extracted values:
+Then it finds the customer number and account number that appear after it.
 
-```text
-0523080
-01403664
+The two captured values are:
+
+```js
+const customerNum = accountMatch[1];
+const accountNum = accountMatch[2];
 ```
 
 ---
 
-## Step 3: Extract Bill Date
+## 6. Extract Bill Date
 
 ```js
 const billDateMatch = text.match(
-    /Bill date:\s*(.+)/i
+  /Bill date:\s*(.+)/i
 );
 
 const billDate = billDateMatch[1].trim();
 ```
 
-This extracts the value following:
+This finds the line beginning with:
 
 ```text
 Bill date:
 ```
+
+and captures the date after it.
 
 Example:
 
@@ -126,81 +179,79 @@ Aug 11, 2020
 
 ---
 
-## Step 4: Extract Bill Number
+## 7. Extract Bill Number
 
 ```js
 const billNumberMatch = text.match(
-    /Bill number:\s*(\d+)/i
+  /Bill number:\s*(\d+)/i
 );
 
 const billNumber = billNumberMatch[1];
 ```
 
-This extracts the bill number following:
+This finds the bill number after:
 
 ```text
 Bill number:
 ```
 
-Example:
-
-```text
-21478560
-```
+The `\d+` part means one or more digits.
 
 ---
 
-## Step 5: Extract Bill Period
+## 8. Extract Bill Period
 
 ```js
 const billPeriodMatch = text.match(
-    /Bill period:[\s\S]*?([A-Za-z]+\s+\d{1,2},\s+\d{4}\s+to\s+[A-Za-z]+\s+\d{1,2},\s+\d{4})/i
+  /Bill period:[\s\S]*?([A-Za-z]+\s+\d{1,2},\s+\d{4}\s+to\s+[A-Za-z]+\s+\d{1,2},\s+\d{4})/i
 );
 
 const billPeriod = billPeriodMatch[1].trim();
 ```
 
-This extracts the date range following:
+This finds the bill period after the label:
 
 ```text
 Bill period:
 ```
 
-Example:
+It captures a date range such as:
 
 ```text
 May 31, 2020 to Jul 30, 2020
 ```
 
-The pattern `[\s\S]*?` allows the parser to search across multiple lines until it finds the date range.
+`[\s\S]*?` is used because the bill period may appear on a later line, and this allows the regex to search across line breaks.
 
 ---
 
-## Step 6: Extract Total New Charges
+## 9. Extract Total New Charges
 
 ```js
 const totalChargeMatch = text.match(
-    /Total new charges\s+\$([\d,]+\.\d{2})/i
+  /Total new charges\s+\$([\d,]+\.\d{2})/i
 );
 
 const totalNewCharge = totalChargeMatch[1];
 ```
 
-This extracts the amount following:
+This finds the amount beside:
 
 ```text
 Total new charges
 ```
 
-Example:
+It captures values like:
 
 ```text
 2,760.84
 ```
 
+The dollar sign is added back when printing the result.
+
 ---
 
-## Step 7: Display Results
+## 10. Print the Results
 
 ```js
 console.log("Customer Number: " + customerNum);
@@ -211,30 +262,4 @@ console.log("Bill Date: " + billDate);
 console.log("Total New Charges: $" + totalNewCharge);
 ```
 
-The extracted information is displayed in the required format.
-
----
-
-## Error Handling
-
-Each field is validated before use.
-
-Example:
-
-```js
-if (!billDateMatch) {
-    throw new Error("Bill date not found");
-}
-```
-
-This prevents runtime errors and provides a clear error message when expected data is missing.
-
----
-
-## Design Decisions
-
-- Used Node.js built-in `fs` module to read files.
-- Used regular expressions to locate and extract required fields.
-- Added validation checks to ensure required data exists.
-- Anchored regex patterns to nearby labels where possible for improved reliability.
-- Kept the implementation simple and readable for maintainability.
+This outputs the extracted information in a clear format.
